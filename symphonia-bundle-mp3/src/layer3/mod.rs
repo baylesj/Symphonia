@@ -302,6 +302,15 @@ impl Layer3 {
             }
 
             for ch in 0..header.n_channels() {
+                // If the channel has no bits for the scale factors and audio data (part2_3_length),
+                // it contains no data. In this case, we can skip creating the bit reader which
+                // avoids an out-of-bounds check if the bit reservoir is empty.
+                let part2_3_length = u32::from(frame_data.granules[gr].channels[ch].part2_3_length);
+                if part2_3_length == 0 {
+                    requantize::zero(&mut self.samples[gr][ch]);
+                    continue;
+                }
+
                 let byte_index = part2_3_begin >> 3;
 
                 // Create a bit reader at the expected starting bit position.
